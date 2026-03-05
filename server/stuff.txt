@@ -1,0 +1,31 @@
+sudo apt update
+sudo apt install wireguard
+
+//CHAVE PRIVADA
+wg genkey | tee /etc/wireguard/server.eky
+
+
+//CHAVE PUBLICA
+wg pubkey | tee /etc/wireguard/server.pub
+
+//mudar acessos da chave PRIVADA
+chmod 600 /etc/wireguard/server.key
+
+//wg0.conf (Configuração Servidor - VER FICHEIRO EM ANEXO)
+
+
+//permitir acesso à porta udp 
+ufw allow 51280/udp
+
+//começar o servidor wireguard
+systemctl start wg-quick@wg0
+
+//ver estado do server
+systemctl status wg-quick@wg0
+
+//ver info do server
+wg
+
+
+
+

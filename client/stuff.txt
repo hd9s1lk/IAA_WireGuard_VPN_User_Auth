@@ -1,0 +1,25 @@
+sudo apt update
+sudo apt install wireguard
+
+//CRIAR PAR DE CHAVES
+wg genkey | tee client.key | wg pubkey > client.pub
+
+
+//Configurar wg0.conf (Configuração Servidor - VER FICHEIRO EM ANEXO)
+nano /etc/wireguard/wg0.conf
+
+//permitir acesso à porta udp 
+ufw allow 51820/udp
+
+//ligar interface
+sudo wg-quick up wg0
+
+//ver info
+wg
+
+//testar conectividade
+ping 10.8.0.1 (com tcpdump -i wg0 icmp do lado do servidor)
+
+
+
+

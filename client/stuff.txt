@@ -1,5 +1,24 @@
 sudo apt update
 sudo apt install wireguard
+sudo apt install stunnel4
+
+//CRIAR CANAL TLS DO CLIENTE
+
+//ESCREVER Configuração DO TUNEL
+ver stunnel.conf
+
+//começar serviço
+sudo systemctl enable stunnel4
+sudo systemctl start stunnel4
+
+//verificar serviço
+sudo systemctl status stunnel4
+
+//VERIFICAR conectividade COM O Servidor
+
+nc -zv 127.0.0.1 51820
+
+
 
 //CRIAR PAR DE CHAVES
 wg genkey | tee client.key | wg pubkey > client.pub

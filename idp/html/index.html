@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Portal VPN - Projeto IAA</title>
+</head>
+<body>
+    <div class="card">
+        {% if step == 'login' %}
+            <h2>Login Wireguard</h2>
+            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+            <form method="POST" action="/login">
+                <input type="text" name="username" placeholder="Utilizador" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Próximo</button>
+            </form>
+
+        {% elif step == 'blocked' %}
+            <h2>Foste bloqueado</h2>
+            <p>Tempo Restante: <span id="countdown">{{ wait_time }}</span>s</p>
+            <script src="/static/script.js"></script>
+            <script>startCountdown({{ wait_time }});</script>
+
+        {% elif step == 'confirm' %}
+            <h2>Confirmar Identidade</h2>
+            <div class="confirm-grid">
+                <a href="/qrcode" class="confirm-card confirm-link">
+                    <h3>TOTP</h3>
+                    <img src="/static/resources/TOTP.jpeg" alt="TOTP Setup" class="confirm-image">
+                    <p>Gerar QR Code TOTP</p>
+                </a>
+                <a href="/mfa" class="confirm-card confirm-link">
+                    <h3>Google Authenticator</h3>
+                    <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="confirm-image">
+                    <p>Introduzir código existente</p>
+                </a>
+            </div>
+
+        {% elif step == 'qrcode' %}
+            <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="mfa-logo">
+            <h2>Gerar QR Code</h2>
+            <p>Scan o QR Code com a app de autenticação e depois introduza o código abaixo.</p>
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code TOTP" class="confirm-image">
+            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+            <form method="POST" action="/mfa">
+                <input type="text" name="otp" placeholder="000000" required>
+                <button type="submit">Ativar a VPN</button>
+            </form>
+
+        {% elif step == 'mfa' %}
+            <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="mfa-logo">
+            <h2>Google Authenticator</h2>
+            <p>Introduza o código</p>
+            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+            <form method="POST" action="/mfa">
+                <input type="text" name="otp" placeholder="000000" required>
+                <button type="submit">Ativar a VPN</button>
+            </form>
+
+        {% elif step == 'dashboard' %}
+            <h2 class="success">Bem-Vindo a VPN WireGuard!</h2>
+            <pre>{{ wg_status }}</pre>
+            <a href="/logout"><button style="background:red">Desligar</button></a>
+
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+flask
+werkzeug
+pyotp
+qrcode[pil]
+python-dotenv
+dotenv

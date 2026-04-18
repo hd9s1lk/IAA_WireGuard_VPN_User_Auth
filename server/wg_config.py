@@ -1,0 +1,1 @@
+# Gestão de peers e IPs no WireGuard

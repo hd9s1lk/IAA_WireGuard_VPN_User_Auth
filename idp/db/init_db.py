@@ -14,38 +14,52 @@ DEFAULT_USER = os.getenv('DEFAULT_USER', 'admin')
 DEFAULT_PASSWORD = os.getenv('DEFAULT_PASSWORD', 'admin123')
 
 def init_db():
-    # Connect using the absolute path so it works regardless of working directory
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Create users table if it doesn't exist
+    # users: stripped down to only what's needed
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT    UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            mfa_secret TEXT,
-            is_locked INTEGER DEFAULT 0,
-            lock_until DATETIME
+            mfa_secret    TEXT
         )
     ''')
 
-    # Create login logs table for RBA if it doesn't exist
+    # user_logs: one row per successful login
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS login_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            ip_address TEXT,
+        CREATE TABLE IF NOT EXISTS user_logs (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id   INTEGER NOT NULL,
+            ip        TEXT    NOT NULL,
+            location  TEXT    NOT NULL DEFAULT 'Unknown',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT -- 'SUCCESS', 'FAILED', 'BLOCKED'
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
 
-    # Insert default user if not already present, using credentials from .env
+    # ip_logs: all IP-level events — FAILED, BLOCKED, and SUCCESS
+    #   blocked_until  — only set on BLOCKED rows; the future datetime when the block lifts
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ip_logs (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip            TEXT     NOT NULL,
+            location      TEXT     NOT NULL DEFAULT 'Unknown',
+            timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
+            username      TEXT,
+            status        TEXT     NOT NULL CHECK(status IN ('FAILED', 'BLOCKED', 'SUCCESS')),
+            blocked_until DATETIME
+        )
+    ''')
+
     p_hash = generate_password_hash(DEFAULT_PASSWORD)
     try:
-        cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (DEFAULT_USER, p_hash))
-    except:
+        cursor.execute(
+            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+            (DEFAULT_USER, p_hash)
+        )
+    except Exception:
         pass
 
     conn.commit()

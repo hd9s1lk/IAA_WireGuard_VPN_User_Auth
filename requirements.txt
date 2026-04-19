@@ -4,3 +4,4 @@ pyotp
 qrcode[pil]
 python-dotenv
 dotenv
+geoip2

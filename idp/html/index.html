@@ -1,69 +1,158 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
-    <title>Portal VPN - Projeto IAA</title>
+    <title>VPN Portal — IAA</title>
 </head>
 <body>
     <div class="card">
+
+        <!-- ── Shared logo header ── -->
+        <div class="card-logo">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="10" fill="url(#grad)"/>
+                <path d="M18 8L28 13.5V22.5L18 28L8 22.5V13.5L18 8Z" stroke="white" stroke-width="1.8" fill="none"/>
+                <circle cx="18" cy="18" r="4" fill="white" fill-opacity="0.9"/>
+                <defs>
+                    <linearGradient id="grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#4f7eff"/>
+                        <stop offset="100%" stop-color="#6c3fff"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="card-logo-text">
+                <span class="card-logo-title">WireGuard VPN</span>
+                <span class="card-logo-sub">Secure Access Portal</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ══════════════════════════════════════════ -->
         {% if step == 'login' %}
-            <h2>Login Wireguard</h2>
-            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+            <h2>Welcome back</h2>
+            <p class="subtitle">Enter your credentials to continue</p>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
             <form method="POST" action="/login">
-                <input type="text" name="username" placeholder="Utilizador" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit">Próximo</button>
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="your username" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary">Continue →</button>
             </form>
 
+        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'blocked' %}
-            <h2>Foste bloqueado</h2>
-            <p>Tempo Restante: <span id="countdown">{{ wait_time }}</span>s</p>
+
+            <div class="blocked-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+            </div>
+
+            <h2>Access Blocked</h2>
+            <p class="subtitle">Too many failed attempts. Please wait before trying again.</p>
+
+            <div class="countdown-wrap">
+                <div class="countdown-label">Time remaining</div>
+                <div id="countdown">{{ wait_time }}</div>
+                <div class="countdown-unit">seconds</div>
+            </div>
+
             <script src="/static/script.js"></script>
             <script>startCountdown({{ wait_time }});</script>
 
+        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'confirm' %}
-            <h2>Confirmar Identidade</h2>
+
+            <h2>Two-Step Verification</h2>
+            <p class="subtitle">Choose how you want to confirm your identity</p>
+
             <div class="confirm-grid">
-                <a href="/qrcode" class="confirm-card confirm-link">
-                    <h3>TOTP</h3>
-                    <img src="/static/resources/TOTP.jpeg" alt="TOTP Setup" class="confirm-image">
-                    <p>Gerar QR Code TOTP</p>
+                <a href="/qrcode" class="confirm-card">
+                    <img src="/static/resources/TOTP.jpeg" alt="TOTP" class="confirm-image">
+                    <h3>New Device</h3>
+                    <p>Generate a TOTP QR Code</p>
                 </a>
-                <a href="/mfa" class="confirm-card confirm-link">
-                    <h3>Google Authenticator</h3>
-                    <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="confirm-image">
-                    <p>Introduzir código existente</p>
+                <a href="/mfa" class="confirm-card">
+                    <img src="/static/resources/authenticator.png" alt="Authenticator" class="confirm-image">
+                    <h3>Already Set Up</h3>
+                    <p>Enter an existing code</p>
                 </a>
             </div>
 
+        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'qrcode' %}
-            <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="mfa-logo">
-            <h2>Gerar QR Code</h2>
-            <p>Scan o QR Code com a app de autenticação e depois introduza o código abaixo.</p>
-            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code TOTP" class="confirm-image">
-            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+            <h2>Set Up Authenticator</h2>
+            <p class="subtitle">Scan the QR Code with your authenticator app</p>
+
+            <div style="text-align:center;">
+                <div class="qr-wrap">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="TOTP QR Code">
+                </div>
+            </div>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
             <form method="POST" action="/mfa">
-                <input type="text" name="otp" placeholder="000000" required>
-                <button type="submit">Ativar a VPN</button>
+                <div class="input-group otp-input">
+                    <label for="otp">6-digit code</label>
+                    <input type="text" id="otp" name="otp" placeholder="000000" maxlength="6" required autocomplete="one-time-code" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary">Activate VPN →</button>
             </form>
 
+        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'mfa' %}
-            <img src="/static/resources/authenticator.png" alt="Authenticator Logo" class="mfa-logo">
-            <h2>Google Authenticator</h2>
-            <p>Introduza o código</p>
-            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+            <img src="/static/resources/authenticator.png" alt="Authenticator" class="mfa-logo">
+            <h2>MFA Authentication</h2>
+            <p class="subtitle">Open Google Authenticator and enter your code</p>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
             <form method="POST" action="/mfa">
-                <input type="text" name="otp" placeholder="000000" required>
-                <button type="submit">Ativar a VPN</button>
+                <div class="input-group otp-input">
+                    <label for="otp">6-digit code</label>
+                    <input type="text" id="otp" name="otp" placeholder="000000" maxlength="6" required autocomplete="one-time-code" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary">Activate VPN →</button>
             </form>
 
+        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'dashboard' %}
-            <h2 class="success">Bem-Vindo a VPN WireGuard!</h2>
-            <pre>{{ wg_status }}</pre>
-            <a href="/logout"><button style="background:red">Desligar</button></a>
+
+            <div class="dashboard-header">
+                <div class="status-dot"></div>
+                <h2 class="success" style="margin-bottom:0;">VPN Active</h2>
+            </div>
+            <p class="subtitle">WireGuard connection established successfully</p>
+
+            <pre>{{ wg_status if wg_status else "No status information available." }}</pre>
+
+            <a href="/logout">
+                <button class="btn btn-danger">Disconnect VPN</button>
+            </a>
 
         {% endif %}
+
     </div>
 </body>
 </html>

@@ -39,17 +39,18 @@ def init_db():
         )
     ''')
 
-    # ip_logs: all IP-level events — FAILED, BLOCKED, and SUCCESS
-    #   blocked_until  — only set on BLOCKED rows; the future datetime when the block lifts
+    # ips_blacklist: one row per IP — tracks failed attempts and blocks
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ip_logs (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip            TEXT     NOT NULL,
-            location      TEXT     NOT NULL DEFAULT 'Unknown',
-            timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
-            username      TEXT,
-            status        TEXT     NOT NULL CHECK(status IN ('FAILED', 'BLOCKED', 'SUCCESS')),
-            blocked_until DATETIME
+        CREATE TABLE IF NOT EXISTS ips_blacklist (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip                  TEXT     NOT NULL UNIQUE,
+            location            TEXT     NOT NULL DEFAULT 'Unknown',
+            timestamp           DATETIME DEFAULT CURRENT_TIMESTAMP,
+            username            TEXT,
+            status              TEXT     NOT NULL CHECK(status IN ('FAILED', 'BLOCKED')),
+            blocked_until       DATETIME,
+            attempt_count       INTEGER  NOT NULL DEFAULT 1,
+            last_block_duration INTEGER
         )
     ''')
 

@@ -70,8 +70,9 @@ def login():
         user_record = cursor.fetchone()
         user_id     = user_record[0] if user_record else None
 
-        if user_record and check_password_hash(user_record[1], password):
+        if user_record and check_password_hash(user_record[1], password): #TODO importar check_password_hash com as alguma coisa para se destinguir
             # ── Success ──────────────────────────────────────────────────────
+            #TODO verificar RAS
             db_gateway.insert_success_data(cursor, ip_address, user_id, location, username)
             conn.commit()
             conn.close()

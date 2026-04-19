@@ -26,9 +26,8 @@ def check_ip_blocked(ip: str) -> tuple[bool, int]:
     conn   = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        'SELECT blocked_until FROM ip_logs '
-        'WHERE ip = ? AND status = "BLOCKED" AND blocked_until > datetime("now") '
-        'ORDER BY blocked_until DESC LIMIT 1',
+        'SELECT blocked_until FROM ips_blacklist '
+        'WHERE ip = ? AND status = "BLOCKED" AND blocked_until > datetime("now")',
         (ip,)
     )
     row = cursor.fetchone()
@@ -38,94 +37,79 @@ def check_ip_blocked(ip: str) -> tuple[bool, int]:
         return False, 0
 
     blocked_until = datetime.fromisoformat(row[0])
-    now           = datetime.now(timezone.utc).replace(tzinfo=None)
-    remaining     = max(0, int((blocked_until - now).total_seconds()))
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    remaining = max(0, int((blocked_until - now).total_seconds()))
     return True, remaining
 
 
 def get_next_block_duration(ip: str) -> int:
-    conn   = get_db()
+    conn = get_db()
     cursor = conn.cursor()
-
     cursor.execute(
-        'SELECT timestamp, blocked_until FROM ip_logs '
-        'WHERE ip = ? AND status = "BLOCKED" '
-        'ORDER BY rowid DESC LIMIT 1',
+        'SELECT last_block_duration FROM ips_blacklist WHERE ip = ?',
         (ip,)
     )
     row = cursor.fetchone()
-
-    if not row:
-        conn.close()
-        return LOCK_TIME
-
-    block_ts_str, blocked_until_str = row
-
-    block_ts = datetime.fromisoformat(block_ts_str)
-    blocked_until = datetime.fromisoformat(blocked_until_str)
-    prev_duration = max(LOCK_TIME, int((blocked_until - block_ts).total_seconds()))
-
-    cursor.execute(
-        'SELECT COUNT(*) FROM ip_logs '
-        'WHERE ip = ? AND status = "SUCCESS" AND timestamp > ?',
-        (ip, blocked_until_str)
-    )
-    success_after_block = cursor.fetchone()[0]
     conn.close()
 
-    return LOCK_TIME if success_after_block > 0 else prev_duration * 2
+    if not row or row[0] is None:
+        return LOCK_TIME
+
+    return row[0] * 2
 
 
 def get_recent_failure_count(cursor: sqlite3.Cursor, ip: str) -> int:
     cursor.execute(
-        'SELECT timestamp FROM ip_logs '
-        'WHERE ip = ? AND status = "SUCCESS" '
-        'ORDER BY rowid DESC LIMIT 1',
+        'SELECT attempt_count FROM ips_blacklist WHERE ip = ?',
         (ip,)
     )
     row = cursor.fetchone()
-
-    if row:
-        cursor.execute(
-            'SELECT COUNT(*) FROM ip_logs '
-            'WHERE ip = ? AND status = "FAILED" AND timestamp > ?',
-            (ip, row[0])
-        )
-    else:
-        cursor.execute(
-            'SELECT COUNT(*) FROM ip_logs WHERE ip = ? AND status = "FAILED"',
-            (ip,)
-        )
-
-    return cursor.fetchone()[0]
+    return row[0] if row else 0
 
 
 # ──────────────────────────────────────────────────────────────
 # WRITE helpers (take an open cursor — caller owns commit/close)
 # ──────────────────────────────────────────────────────────────
 
-def insert_failed_attempt(cursor: sqlite3.Cursor,ip: str,location: str,username: str | None) -> None:
+def insert_failed_attempt(cursor: sqlite3.Cursor, ip: str, location: str, username: str | None) -> None:
     cursor.execute(
-        'INSERT INTO ip_logs (ip, location, username, status) VALUES (?, ?, ?, "FAILED")',
+        '''
+        INSERT INTO ips_blacklist (ip, location, username, status, attempt_count)
+        VALUES (?, ?, ?, "FAILED", 1)
+        ON CONFLICT(ip) DO UPDATE SET
+            attempt_count = attempt_count + 1,
+            username      = excluded.username,
+            location      = excluded.location,
+            timestamp     = CURRENT_TIMESTAMP,
+            status        = "FAILED"
+        ''',
         (ip, location, username)
     )
 
 
-def insert_blocked(cursor: sqlite3.Cursor,ip: str,location: str,username: str | None,block_duration: int) -> None:
+def insert_blocked(cursor: sqlite3.Cursor, ip: str, location: str, username: str | None, block_duration: int) -> None:
+
     cursor.execute(
-        'INSERT INTO ip_logs (ip, location, username, status, blocked_until) '
-        'VALUES (?, ?, ?, "BLOCKED", datetime("now", ?))',
-        (ip, location, username, f'+{block_duration} seconds')
+        '''
+        UPDATE ips_blacklist SET
+            status              = "BLOCKED",
+            blocked_until       = datetime("now", ?),
+            last_block_duration = ?,
+            username            = ?,
+            location            = ?,
+            timestamp           = CURRENT_TIMESTAMP
+        WHERE ip = ?
+        ''',
+        (f'+{block_duration} seconds', block_duration, username, location, ip)
     )
 
 
-def insert_success_data(cursor: sqlite3.Cursor,ip: str,user_id: int,location: str,username: str) -> None:
+def insert_success_data(cursor: sqlite3.Cursor, ip: str, user_id: int, location: str, username: str) -> None:
     cursor.execute(
-        'INSERT INTO ip_logs (ip, location, username, status) VALUES (?, ?, ?, "SUCCESS")',
-        (ip, location, username)
+        'DELETE FROM ips_blacklist WHERE ip = ?',
+        (ip,)
     )
-    cursor.execute(
+    cursor.execute( #TODO NAO deve ser preciso adicionar sempre deps vemos
         'INSERT INTO user_logs (user_id, ip, location) VALUES (?, ?, ?)',
         (user_id, ip, location)
     )
-    

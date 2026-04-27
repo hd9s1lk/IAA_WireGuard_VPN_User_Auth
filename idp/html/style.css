@@ -1,4 +1,3 @@
-/* ─── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -18,7 +17,6 @@ body {
     padding: 20px;
 }
 
-/* ─── Card ──────────────────────────────────────────────────── */
 .card {
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(24px);
@@ -40,7 +38,6 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Logo / Header ─────────────────────────────────────────── */
 .card-logo {
     display: flex;
     align-items: center;
@@ -76,7 +73,6 @@ body {
     margin-top: 2px;
 }
 
-/* ─── Section titles ─────────────────────────────────────────── */
 h2 {
     font-size: 1.35rem;
     font-weight: 600;
@@ -93,14 +89,12 @@ h2 {
     margin-bottom: 28px;
 }
 
-/* ─── Divider ────────────────────────────────────────────────── */
 .divider {
     height: 1px;
     background: rgba(255,255,255,0.07);
     margin: 24px 0;
 }
 
-/* ─── Form inputs ────────────────────────────────────────────── */
 .input-group {
     position: relative;
     margin-bottom: 14px;
@@ -138,7 +132,6 @@ h2 {
     box-shadow: 0 0 0 3px rgba(99, 146, 255, 0.12);
 }
 
-/* ─── Buttons ────────────────────────────────────────────────── */
 .btn {
     display: block;
     width: 100%;
@@ -152,6 +145,17 @@ h2 {
     transition: all 0.2s ease;
     margin-top: 20px;
     letter-spacing: 0.01em;
+}
+
+.button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 0;
+}
+
+.button-row .btn {
+    width: 100%;
 }
 
 .btn-primary {
@@ -183,7 +187,6 @@ h2 {
     filter: brightness(1.08);
 }
 
-/* ─── Error / Success messages ───────────────────────────────── */
 .error {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.25);
@@ -199,7 +202,6 @@ h2 {
     color: #4ade80;
 }
 
-/* ─── Blocked screen ─────────────────────────────────────────── */
 .blocked-icon {
     width: 64px;
     height: 64px;
@@ -243,7 +245,6 @@ h2 {
     margin-top: 4px;
 }
 
-/* ─── Confirm / MFA cards ────────────────────────────────────── */
 .confirm-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -291,7 +292,6 @@ h2 {
     line-height: 1.4;
 }
 
-/* ─── MFA logo ───────────────────────────────────────────────── */
 .mfa-logo {
     width: 72px;
     height: 72px;
@@ -304,7 +304,6 @@ h2 {
     border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* ─── OTP input (monospace, large) ──────────────────────────── */
 .otp-input input {
     text-align: center;
     font-size: 1.5rem;
@@ -313,7 +312,6 @@ h2 {
     font-family: 'Courier New', monospace;
 }
 
-/* ─── Dashboard ──────────────────────────────────────────────── */
 .dashboard-header {
     display: flex;
     align-items: center;
@@ -352,7 +350,6 @@ pre {
     line-height: 1.6;
 }
 
-/* ─── QR code wrapper ────────────────────────────────────────── */
 .qr-wrap {
     background: #fff;
     border-radius: 12px;

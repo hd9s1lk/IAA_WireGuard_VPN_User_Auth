@@ -3,24 +3,17 @@ import sqlite3
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-# Load .env from the project root (two levels above db/)
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 MAX_ATTEMPTS = int(os.getenv('MAX_ATTEMPTS', 3))
 LOCK_TIME    = int(os.getenv('LOCK_TIME', 15))
 
-# Build the absolute path from DB_FILE: always stored in db/data/
 DB_PATH = os.path.join(os.path.dirname(__file__), 'data', os.getenv('DB_FILE', 'data.db'))
 
 
 def get_db() -> sqlite3.Connection:
-    """Return a new SQLite connection."""
     return sqlite3.connect(DB_PATH)
 
-
-# ──────────────────────────────────────────────────────────────
-# READ helpers (open their own short-lived connections)
-# ──────────────────────────────────────────────────────────────
 
 def check_ip_blocked(ip: str) -> tuple[bool, int]:
     conn   = get_db()
@@ -67,10 +60,6 @@ def get_recent_failure_count(cursor: sqlite3.Cursor, ip: str) -> int:
     return row[0] if row else 0
 
 
-# ──────────────────────────────────────────────────────────────
-# WRITE helpers (take an open cursor — caller owns commit/close)
-# ──────────────────────────────────────────────────────────────
-
 def insert_failed_attempt(cursor: sqlite3.Cursor, ip: str, location: str, username: str | None) -> None:
     cursor.execute(
         '''
@@ -104,12 +93,12 @@ def insert_blocked(cursor: sqlite3.Cursor, ip: str, location: str, username: str
     )
 
 
-def insert_success_data(cursor: sqlite3.Cursor, ip: str, user_id: int, location: str, username: str) -> None:
+def insert_success_data(cursor: sqlite3.Cursor, ip: str, user_id: int, location: str, username: str, city: str = None, rba_score: int = 0) -> None:
     cursor.execute(
         'DELETE FROM ips_blacklist WHERE ip = ?',
         (ip,)
     )
-    cursor.execute( #TODO NAO deve ser preciso adicionar sempre deps vemos
-        'INSERT INTO user_logs (user_id, ip, location) VALUES (?, ?, ?)',
-        (user_id, ip, location)
+    cursor.execute(
+        'INSERT INTO user_logs (user_id, ip, location, city, rba_score) VALUES (?, ?, ?, ?, ?)',
+        (user_id, ip, location, city, rba_score)
     )

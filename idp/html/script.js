@@ -1,4 +1,3 @@
-// Countdown timer for blocked users
 function startCountdown(seconds) {
     const countdown = document.getElementById('countdown');
     if (!countdown) return;

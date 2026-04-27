@@ -5,3 +5,4 @@ qrcode[pil]
 python-dotenv
 dotenv
 geoip2
+webauthn

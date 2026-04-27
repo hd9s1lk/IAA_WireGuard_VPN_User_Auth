@@ -9,7 +9,6 @@
 <body>
     <div class="card">
 
-        <!-- ── Shared logo header ── -->
         <div class="card-logo">
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="36" height="36" rx="10" fill="url(#grad)"/>
@@ -30,12 +29,14 @@
 
         <div class="divider"></div>
 
-        <!-- ══════════════════════════════════════════ -->
         {% if step == 'login' %}
 
             <h2>Welcome back</h2>
             <p class="subtitle">Enter your credentials to continue</p>
 
+            {% if success %}
+                <div class="success">{{ success }}</div>
+            {% endif %}
             {% if error %}
                 <div class="error">{{ error }}</div>
             {% endif %}
@@ -49,10 +50,60 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn btn-primary">Continue →</button>
+                <div class="button-row">
+                    <button type="submit" class="btn btn-primary">Continue</button>
+                    <a href="/register" class="btn btn-primary" style="text-decoration:none; text-align: center;">Register</a>
+                </div>
             </form>
 
-        <!-- ══════════════════════════════════════════ -->
+        {% elif step == 'register' %}
+
+            <h2>Create account</h2>
+            <p class="subtitle">Register a new VPN user</p>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/register">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="your username" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+                </div>
+                <div class="button-row">
+                    <button type="submit" class="btn btn-primary">Create account</button>
+                    <a href="/login" class="btn btn-primary" style="text-decoration:none; text-align: center;">Go back</a>
+                </div>
+            </form>
+
+        {% elif step == 'register_qrcode' %}
+
+            <h2>Faça a leitura do seu QR Code</h2>
+            <p class="subtitle">Só aparecerá uma vez</p>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <div style="text-align:center;">
+                <div class="qr-wrap">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="TOTP QR Code">
+                </div>
+            </div>
+
+            <form method="POST" action="/register_complete">
+                <div class="input-group otp-input" style="margin-top: 24px;">
+                    <label for="otp">Digite o código de 6 dígitos</label>
+                    <input type="text" id="otp" name="otp" placeholder="000000" maxlength="6" required autocomplete="one-time-code" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary">Confirmar</button>
+            </form>
+            <a href="/login" class="btn btn-primary" style="display:block; text-align:center; margin-top: 12px; text-decoration:none;">Continue</a>
+
         {% elif step == 'blocked' %}
 
             <div class="blocked-icon">
@@ -74,7 +125,6 @@
             <script src="/static/script.js"></script>
             <script>startCountdown({{ wait_time }});</script>
 
-        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'confirm' %}
 
             <h2>Two-Step Verification</h2>
@@ -86,6 +136,11 @@
                     <h3>New Device</h3>
                     <p>Generate a TOTP QR Code</p>
                 </a>
+                <a href="/yubikey" class="confirm-card">
+                    <img src="/static/resources/yubikey.jpg" alt="Yubikey" class="confirm-image">
+                    <h3>Yubikey</h3>
+                    <p>Use Yubikey for authentication</p>
+                </a>
                 <a href="/mfa" class="confirm-card">
                     <img src="/static/resources/authenticator.png" alt="Authenticator" class="confirm-image">
                     <h3>Already Set Up</h3>
@@ -93,7 +148,6 @@
                 </a>
             </div>
 
-        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'qrcode' %}
 
             <h2>Set Up Authenticator</h2>
@@ -117,13 +171,15 @@
                 <button type="submit" class="btn btn-primary">Activate VPN →</button>
             </form>
 
-        <!-- ══════════════════════════════════════════ -->
         {% elif step == 'mfa' %}
 
             <img src="/static/resources/authenticator.png" alt="Authenticator" class="mfa-logo">
             <h2>MFA Authentication</h2>
             <p class="subtitle">Open Google Authenticator and enter your code</p>
 
+            {% if warning %}
+                <div class="error">{{ warning }}</div>
+            {% endif %}
             {% if error %}
                 <div class="error">{{ error }}</div>
             {% endif %}
@@ -136,20 +192,27 @@
                 <button type="submit" class="btn btn-primary">Activate VPN →</button>
             </form>
 
-        <!-- ══════════════════════════════════════════ -->
-        {% elif step == 'dashboard' %}
+        {% elif step == 'yubikey' %}
 
-            <div class="dashboard-header">
-                <div class="status-dot"></div>
-                <h2 class="success" style="margin-bottom:0;">VPN Active</h2>
-            </div>
-            <p class="subtitle">WireGuard connection established successfully</p>
+            <h2>Yubikey Authentication</h2>
+            <p class="subtitle">Use your Yubikey to authenticate</p>
 
-            <pre>{{ wg_status if wg_status else "No status information available." }}</pre>
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+            {% if success %}
+                <div class="success">{{ success }}</div>
+            {% endif %}
 
-            <a href="/logout">
-                <button class="btn btn-danger">Disconnect VPN</button>
-            </a>
+            {% if has_cred %}
+                <form method="POST" action="/yubikey_verify">
+                    <button type="submit" class="btn btn-primary">Authenticate with Yubikey</button>
+                </form>
+            {% else %}
+                <form method="POST" action="/yubikey_register">
+                    <button type="submit" class="btn btn-primary">Register Yubikey</button>
+                </form>
+            {% endif %}
 
         {% endif %}
 
